@@ -88,9 +88,6 @@ func main() {
 			ds = "0" + ds
 		}
 		archPath := filepath.Join(archiveDir, ys, ms, ds)
-		if verbose {
-			fmt.Printf("File %s arch dir is %s\n", fn, archPath)
-		}
 		err = os.MkdirAll(archPath, 0755)
 		if err != nil {
 			fmt.Printf("Error creating %s: %v\n", archPath, err)
@@ -100,6 +97,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("Error moving %s to %s: %v\n", archPath, filepath.Join(archPath, fn), err)
 		}
-
+		if verbose {
+			fmt.Printf("File %s moved to %s\n", fn, archPath)
+		}
 	}
 }
