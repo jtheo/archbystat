@@ -6,17 +6,18 @@ archbystat, the name may change in the future, reads a dir, by default the one w
 
 ```
 Usage of archbystat
+  -V    show version and exits
   -a string
-    	directory where to save (default "archive")
+        directory where to save (default "archive")
   -o int
-    	how many minutes older the screenshot need to be to be moved (default 60)
+        how many minutes older the screenshot need to be to be moved (default 60)
   -p string
-    	directory to process (default ".")
+        directory to process this is mandatory
   -post string
-    	postfix to filter the files to process
+        postfix to filter the files to process
   -pre string
-    	prefix to filter the files to process
-  -v	verbose output
+        prefix to filter the files to process
+  -v    verbose output
 ```
 
 

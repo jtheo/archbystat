@@ -22,7 +22,7 @@ func main() {
 	var verbose bool
 	var showver bool
 
-	flag.StringVar(&processDir, "p", ".", "directory to process")
+	flag.StringVar(&processDir, "p", "", "directory to process this is mandatory")
 	flag.StringVar(&archiveDir, "a", "archive", "directory where to save")
 	flag.StringVar(&prefix, "pre", "", "prefix to filter the files to process")
 	flag.StringVar(&postfix, "post", "", "postfix to filter the files to process")
@@ -34,6 +34,12 @@ func main() {
 	if showver {
 		log.Printf("Version %s\n", Version)
 		os.Exit(0)
+	}
+
+	if processDir == "" {
+		log.Printf("You need to provide a directory to process\n\n")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	listEntries, err := os.ReadDir(processDir)
