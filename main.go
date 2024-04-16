@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var Version = "0.0"
+
 func main() {
 	var archiveDir string
 	var processDir string
@@ -18,6 +20,7 @@ func main() {
 	var postfix string
 	var older int64
 	var verbose bool
+	var showver bool
 
 	flag.StringVar(&processDir, "p", ".", "directory to process")
 	flag.StringVar(&archiveDir, "a", "archive", "directory where to save")
@@ -25,7 +28,13 @@ func main() {
 	flag.StringVar(&postfix, "post", "", "postfix to filter the files to process")
 	flag.Int64Var(&older, "o", 60, "how many minutes older the screenshot need to be to be moved")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
+	flag.BoolVar(&showver, "V", false, "show version and exits")
 	flag.Parse()
+
+	if showver {
+		log.Printf("Version %s\n", Version)
+		os.Exit(0)
+	}
 
 	listEntries, err := os.ReadDir(processDir)
 	if err != nil {
