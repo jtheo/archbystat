@@ -53,7 +53,7 @@ func main() {
 			continue
 		}
 
-		fn := entry.Name()
+		fn := filepath.Join(processDir, entry.Name())
 
 		fs, err := os.Stat(fn)
 		if err != nil {
