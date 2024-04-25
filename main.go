@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,24 @@ func main() {
 	flag.BoolVar(&superVerbose, "vv", false, "verbose output with parameters shown")
 	flag.BoolVar(&showver, "V", false, "show version and exits")
 	flag.Parse()
+
+	if Version == "0.0" {
+		Version = func() string {
+			if info, ok := debug.ReadBuildInfo(); ok {
+				ver := []string{}
+				for _, setting := range info.Settings {
+					if setting.Key == "vcs.revision" {
+						ver = append(ver, setting.Value[:7])
+					}
+					if setting.Key == "vcs.time" {
+						ver = append(ver, setting.Value)
+					}
+				}
+				return strings.Join(ver, " ")
+			}
+			return ""
+		}()
+	}
 
 	if showver {
 		log.Printf("Version %s\n", Version)
