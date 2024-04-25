@@ -19,7 +19,7 @@ func main() {
 	var prefix string
 	var postfix string
 	var older int64
-	var verbose bool
+	var verbose, superVerbose bool
 	var showver bool
 
 	flag.StringVar(&processDir, "p", "", "directory to process this is mandatory")
@@ -28,6 +28,7 @@ func main() {
 	flag.StringVar(&postfix, "post", "", "postfix to filter the files to process")
 	flag.Int64Var(&older, "o", 60, "how many minutes older the screenshot need to be to be moved")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
+	flag.BoolVar(&superVerbose, "vv", false, "verbose output with parameters shown")
 	flag.BoolVar(&showver, "V", false, "show version and exits")
 	flag.Parse()
 
@@ -36,11 +37,20 @@ func main() {
 		os.Exit(0)
 	}
 
+	if superVerbose {
+		verbose = true
+	}
+
 	if processDir == "" {
 		log.Printf("You need to provide a directory to process\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	fmt.Printf("Process Dir: %s\n", processDir)
+	fmt.Printf("Archive Dir: %s\n", archiveDir)
+	fmt.Printf("older in minutes: %d\n", older)
+	fmt.Printf("\nVersion: %s\n\n", Version)
 
 	listEntries, err := os.ReadDir(processDir)
 	if err != nil {
@@ -53,6 +63,7 @@ func main() {
 			continue
 		}
 
+		eName := entry.Name()
 		fn := filepath.Join(processDir, entry.Name())
 
 		fs, err := os.Stat(fn)
@@ -68,16 +79,16 @@ func main() {
 			continue
 		}
 
-		if prefix != "" && !strings.HasPrefix(fn, prefix) {
+		if prefix != "" && !strings.HasPrefix(eName, prefix) {
 			if verbose {
-				log.Printf("%s doesn't match prefix: %s. Continue\n", fn, prefix)
+				log.Printf("%s doesn't match prefix: %s. Continue\n", eName, prefix)
 			}
 			continue
 
 		}
-		if postfix != "" && !strings.HasSuffix(fn, postfix) {
+		if postfix != "" && !strings.HasSuffix(eName, postfix) {
 			if verbose {
-				log.Printf("%s doesn't match postfix %s. Continue\n", fn, postfix)
+				log.Printf("%s doesn't match postfix %s. Continue\n", eName, postfix)
 			}
 			continue
 		}
@@ -99,9 +110,9 @@ func main() {
 			fmt.Printf("Error creating %s: %v\n", archPath, err)
 		}
 
-		err = os.Rename(fn, filepath.Join(archPath, fn))
+		err = os.Rename(fn, filepath.Join(archPath, eName))
 		if err != nil {
-			fmt.Printf("Error moving %s to %s: %v\n", archPath, filepath.Join(archPath, fn), err)
+			fmt.Printf("Error moving %s to %s: %v\n", archPath, filepath.Join(archPath, eName), err)
 		}
 		if verbose {
 			fmt.Printf("File %s moved to %s\n", fn, archPath)
