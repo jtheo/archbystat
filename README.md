@@ -9,6 +9,7 @@ Usage of archbystat
   -V    show version and exits
   -a string
         directory where to save (default "archive")
+  -d    dry-run
   -o int
         how many minutes older the screenshot need to be to be moved (default 60)
   -p string
@@ -18,11 +19,10 @@ Usage of archbystat
   -pre string
         prefix to filter the files to process
   -v    verbose output
+  -vv
+        verbose output with parameters shown
 ```
-
 
 ## To Do
 
 - exclude list
-- using exif instead of modtime for images
-- ???

@@ -69,11 +69,12 @@ func main() {
 			ds = "0" + ds
 		}
 		archPath := filepath.Join(c.archiveDir, ys, ms, ds)
-		err = os.MkdirAll(archPath, 0755)
-		if err != nil {
-			fmt.Printf("Error creating %s: %v\n", archPath, err)
+		if !c.dryRun {
+			err = os.MkdirAll(archPath, 0755)
+			if err != nil {
+				fmt.Printf("Error creating %s: %v\n", archPath, err)
+			}
 		}
-
 		if !c.dryRun {
 			err = os.Rename(fn, filepath.Join(archPath, eName))
 			if err != nil {
