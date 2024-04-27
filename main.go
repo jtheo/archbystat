@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -14,47 +15,10 @@ import (
 var Version = "0.0"
 
 func main() {
-	var archiveDir string
-	var processDir string
-	var prefix string
-	var postfix string
-	var older int64
-	var verbose, superVerbose bool
-	var showver bool
-
-	flag.StringVar(&processDir, "p", "", "directory to process this is mandatory")
-	flag.StringVar(&archiveDir, "a", "archive", "directory where to save")
-	flag.StringVar(&prefix, "pre", "", "prefix to filter the files to process")
-	flag.StringVar(&postfix, "post", "", "postfix to filter the files to process")
-	flag.Int64Var(&older, "o", 60, "how many minutes older the screenshot need to be to be moved")
-	flag.BoolVar(&verbose, "v", false, "verbose output")
-	flag.BoolVar(&superVerbose, "vv", false, "verbose output with parameters shown")
-	flag.BoolVar(&showver, "V", false, "show version and exits")
-	flag.Parse()
-
-	if showver {
-		log.Printf("Version %s\n", Version)
-		os.Exit(0)
-	}
-
-	if superVerbose {
-		verbose = true
-	}
-
-	if processDir == "" {
-		log.Printf("You need to provide a directory to process\n\n")
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	fmt.Printf("Process Dir: %s\n", processDir)
-	fmt.Printf("Archive Dir: %s\n", archiveDir)
-	fmt.Printf("older in minutes: %d\n", older)
-	fmt.Printf("\nVersion: %s\n\n", Version)
-
-	listEntries, err := os.ReadDir(processDir)
+	c := start()
+	listEntries, err := os.ReadDir(c.processDir)
 	if err != nil {
-		fmt.Printf("Error reading content of dir %s: %v\n", processDir, err)
+		fmt.Printf("Error reading content of dir %s: %v\n", c.processDir, err)
 		os.Exit(1)
 	}
 
@@ -64,7 +28,7 @@ func main() {
 		}
 
 		eName := entry.Name()
-		fn := filepath.Join(processDir, entry.Name())
+		fn := filepath.Join(c.processDir, entry.Name())
 
 		fs, err := os.Stat(fn)
 		if err != nil {
@@ -72,23 +36,23 @@ func main() {
 			os.Exit(1)
 		}
 
-		if time.Since(fs.ModTime()) < (time.Duration(older) * time.Minute) {
-			if verbose {
-				log.Printf("%s is newer than the threshold %d, continue", fn, older)
+		if time.Since(fs.ModTime()) < (time.Duration(c.older) * time.Minute) {
+			if c.verbose {
+				log.Printf("%s is newer than the threshold %d, continue", fn, c.older)
 			}
 			continue
 		}
 
-		if prefix != "" && !strings.HasPrefix(eName, prefix) {
-			if verbose {
-				log.Printf("%s doesn't match prefix: %s. Continue\n", eName, prefix)
+		if c.prefix != "" && !strings.HasPrefix(eName, c.prefix) {
+			if c.verbose {
+				log.Printf("%s doesn't match prefix: %s. Continue\n", eName, c.prefix)
 			}
 			continue
 
 		}
-		if postfix != "" && !strings.HasSuffix(eName, postfix) {
-			if verbose {
-				log.Printf("%s doesn't match postfix %s. Continue\n", eName, postfix)
+		if c.postfix != "" && !strings.HasSuffix(eName, c.postfix) {
+			if c.verbose {
+				log.Printf("%s doesn't match postfix %s. Continue\n", eName, c.postfix)
 			}
 			continue
 		}
@@ -104,18 +68,95 @@ func main() {
 		if day < 10 {
 			ds = "0" + ds
 		}
-		archPath := filepath.Join(archiveDir, ys, ms, ds)
-		err = os.MkdirAll(archPath, 0755)
-		if err != nil {
-			fmt.Printf("Error creating %s: %v\n", archPath, err)
+		archPath := filepath.Join(c.archiveDir, ys, ms, ds)
+		if !c.dryRun {
+			err = os.MkdirAll(archPath, 0755)
+			if err != nil {
+				fmt.Printf("Error creating %s: %v\n", archPath, err)
+			}
+		}
+		if !c.dryRun {
+			err = os.Rename(fn, filepath.Join(archPath, eName))
+			if err != nil {
+				fmt.Printf("Error moving %s to %s: %v\n", archPath, filepath.Join(archPath, eName), err)
+			}
 		}
 
-		err = os.Rename(fn, filepath.Join(archPath, eName))
-		if err != nil {
-			fmt.Printf("Error moving %s to %s: %v\n", archPath, filepath.Join(archPath, eName), err)
-		}
-		if verbose {
+		if c.verbose {
 			fmt.Printf("File %s moved to %s\n", fn, archPath)
 		}
 	}
+}
+
+type config struct {
+	archiveDir            string
+	processDir            string
+	prefix                string
+	postfix               string
+	older                 int64
+	verbose, superVerbose bool
+	showver               bool
+	dryRun                bool
+}
+
+func start() *config {
+	c := config{}
+	flag.StringVar(&c.processDir, "p", "", "directory to process this is mandatory")
+	flag.StringVar(&c.archiveDir, "a", "archive", "directory where to save")
+	flag.StringVar(&c.prefix, "pre", "", "prefix to filter the files to process")
+	flag.StringVar(&c.postfix, "post", "", "postfix to filter the files to process")
+	flag.Int64Var(&c.older, "o", 60, "how many minutes older the screenshot need to be to be moved")
+	flag.BoolVar(&c.verbose, "v", false, "verbose output")
+	flag.BoolVar(&c.superVerbose, "vv", false, "verbose output with parameters shown")
+	flag.BoolVar(&c.showver, "V", false, "show version and exits")
+	flag.BoolVar(&c.dryRun, "d", false, "dry-run")
+	flag.Parse()
+
+	if Version == "0.0" {
+		Version = func() string {
+			if info, ok := debug.ReadBuildInfo(); ok {
+				ver := []string{}
+				for _, setting := range info.Settings {
+					if setting.Key == "vcs.revision" {
+						ver = append(ver, setting.Value[:7])
+					}
+					if setting.Key == "vcs.time" {
+						ver = append(ver, setting.Value)
+					}
+				}
+				return strings.Join(ver, " ")
+			}
+			return ""
+		}()
+	}
+
+	if c.showver {
+		log.Printf("Version %s\n", Version)
+		os.Exit(0)
+	}
+
+	if c.superVerbose {
+		c.verbose = true
+	}
+
+	if c.dryRun {
+		c.verbose = true
+	}
+
+	if c.processDir == "" {
+		log.Printf("You need to provide a directory to process\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if c.superVerbose {
+		fmt.Printf("Process Dir: %s\n", c.processDir)
+		fmt.Printf("Archive Dir: %s\n", c.archiveDir)
+		fmt.Printf("older in minutes: %d\n", c.older)
+		fmt.Printf("\nVersion: %s\n", Version)
+		if c.dryRun {
+			fmt.Printf("Dry-Run active, command won't move files, but only shows what's happening\n")
+		}
+		fmt.Println()
+	}
+	return &c
 }
