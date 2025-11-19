@@ -105,7 +105,7 @@ func start() *config {
 	basedir := cmp.Or(os.Getenv("HOME"), "/tmp")
 	c := config{}
 	flag.StringVar(&c.processDir, "p", filepath.Join(basedir, "L"), "directory to process this is mandatory")
-	flag.StringVar(&c.archiveDir, "a", filepath.Join(basedir, "archive"), "directory where to save")
+	flag.StringVar(&c.archiveDir, "a", filepath.Join(basedir, "L", "archive"), "directory where to save")
 	flag.StringVar(&c.prefix, "pre", "", "prefix to filter the files to process")
 	flag.StringVar(&c.postfix, "post", "", "postfix to filter the files to process")
 	flag.Int64Var(&c.older, "o", 60, "how many minutes older the screenshot need to be to be moved")

@@ -62,4 +62,6 @@ for GOOS in "${oses[@]}"; do
 	done
 done
 
+cp -v bin/${name}-darwin-arm64 ~/bin/${name}
+
 echo
